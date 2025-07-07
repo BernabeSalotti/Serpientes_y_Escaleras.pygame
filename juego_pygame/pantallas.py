@@ -510,3 +510,6 @@ def mostrar_crono(tiempo_restante:int):
     pygame.draw.rect(pantalla,NEGRO,(120,30,240,40))
     texto_cronometro = fuente_3.render(f"Tiempo restante: {tiempo_restante}s", True, color_crono)
     pantalla.blit(texto_cronometro, (130, 40))
+
+while True:
+    menu_principal()
