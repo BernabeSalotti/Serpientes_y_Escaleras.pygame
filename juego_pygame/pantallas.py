@@ -28,9 +28,10 @@ imagen_trofeo_2 = pygame.transform.scale(imagen_trofeo_2,(250,250))
 imagen_serpiente_3 = pygame.image.load("juego_pygame/imagenes/serpiente_3.png")
 imagen_escalera_3 = pygame.image.load("juego_pygame/imagenes/escalera_3.png")
 #-----------FUENTES----------------------------
-fuente = pygame.font.SysFont(None, 40)
-fuente_2 = pygame.font.SysFont(None,20)
-fuente_3 = pygame.font.SysFont(None,30)
+fuente = pygame.font.SysFont('Arial', 37)
+fuente_2 = pygame.font.SysFont('Arial',20)
+fuente_3 = pygame.font.SysFont('Arial',30)
+fuente_4 = pygame.font.SysFont('Arial',15)
 fuente_titulo = pygame.font.SysFont('comic sans ms', 70)
 
 #------------SONIDOS--------------------------
@@ -155,10 +156,20 @@ def pedir_nombre():
     clock = pygame.time.Clock()
     nombre_jugador = ""
     escribiendo = True
-
+    mensaje_error = ""
     boton_comenzar = pygame.Rect(250, 500, 180, 50)
     boton_cancelar = pygame.Rect(470, 500, 180, 50)
     input_rect = pygame.Rect(250, 350, 400, 50)
+
+    nombres_existentes = []
+
+    with open("juego_pygame/score.csv", "r") as archivo:
+        for linea in archivo:
+            partes = linea.strip().split(",")
+            if len(partes) == 2:
+                nombres_existentes.append(partes[0].lower()) 
+
+
 
     while escribiendo:
         pantalla.fill(FONDO)
@@ -175,6 +186,10 @@ def pedir_nombre():
         texto_nombre = fuente.render(nombre_jugador, True, NEGRO)
         pantalla.blit(texto_nombre, (input_rect.x + 150, input_rect.y + 10))
 
+        if mensaje_error:
+            texto_error = fuente_3.render(mensaje_error, True, ROJO)
+            pantalla.blit(texto_error, (250, 420))
+
         mouse_pos = pygame.mouse.get_pos()
 
         # Dibujar botones
@@ -187,7 +202,7 @@ def pedir_nombre():
             else: 
                 color_boton = NEGRO
             pygame.draw.rect(pantalla, color_boton, rect)
-            texto_render = fuente.render(texto, True, BLANCO)
+            texto_render = fuente_3.render(texto, True, BLANCO)
             pantalla.blit(texto_render, (rect.x + 10, rect.y + 10))
 
         pygame.display.flip()
@@ -198,16 +213,25 @@ def pedir_nombre():
                 sys.exit()
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_RETURN and nombre_jugador != "":
-                    juego(nombre_jugador)
+                    if nombre_jugador.lower() in nombres_existentes:
+                        mensaje_error = "Ese nombre ya está registrado. Elegí otro."
+                    else:
+                        juego(nombre_jugador)
                 
                 elif evento.key == pygame.K_BACKSPACE:
                     nombre_jugador = nombre_jugador[:-1]
+                    mensaje_error = ""
                 else:
                     if len(nombre_jugador) < 20:
                         nombre_jugador += evento.unicode
+                        mensaje_error = ""
+
             if evento.type == pygame.MOUSEBUTTONDOWN:
                 if boton_comenzar.collidepoint(mouse_pos) and nombre_jugador != "":
-                    juego(nombre_jugador)
+                    if nombre_jugador.lower() in nombres_existentes:
+                        mensaje_error = "Ese nombre ya está registrado. Elegí otro."
+                    else:
+                        juego(nombre_jugador)
                     
                 elif boton_cancelar.collidepoint(mouse_pos):
                     return  # Volver al menú principal
@@ -240,6 +264,18 @@ def juego(nombre_jugador: str):
     while True:
         mouse_pos = pygame.mouse.get_pos()
         pantalla.fill(FONDO)
+
+
+        #preguntas- seleccion aleatoria-muestra
+        if esperando_respuesta:
+            if pregunta_actual is None and copia_preguntas:
+                pregunta_actual = pregunta_aleatoria(copia_preguntas)
+                tiempo_inicio = pygame.time.get_ticks()
+                copia_preguntas.remove(pregunta_actual)
+                
+        
+            if pregunta_actual:
+                mostrar_pregunta(pregunta_actual, opciones_rects, mouse_pos)
         
         #cronometro
         if esperando_respuesta and pregunta_actual:
@@ -262,16 +298,6 @@ def juego(nombre_jugador: str):
 
         variables_fin_juego(posicion_actual,copia_preguntas,nombre_jugador)
 
-        #preguntas- seleccion aleatoria-muestra
-        if esperando_respuesta:
-            if pregunta_actual is None and copia_preguntas:
-                pregunta_actual = pregunta_aleatoria(copia_preguntas)
-                tiempo_inicio = pygame.time.get_ticks()
-                copia_preguntas.remove(pregunta_actual)
-                
-        
-            if pregunta_actual:
-                mostrar_pregunta(pregunta_actual, opciones_rects, mouse_pos)
 
         # --- Dibujar tablero de 31 posiciones ---
         mostrar_tablero(posicion_actual,posicion_momentanea,posicion_previa)
@@ -319,7 +345,7 @@ def mostrar_pregunta(pregunta: dict, opciones_rects:list, mouse_pos: tuple):
     mouse_pos(tuple): posicion del mouse
     """
     pygame.draw.rect(pantalla, NEGRO, (30, 450, 800, 50))
-    pregunta_txt = fuente_3.render(pregunta["pregunta"], True, BLANCO)
+    pregunta_txt = fuente_2.render(pregunta["pregunta"], True, BLANCO)
     pantalla.blit(pregunta_txt, (50, 460))
 
     opciones = ['a', 'b', 'c']
@@ -366,19 +392,19 @@ def mostrar_tablero(posicion_actual:int,posicion_momentanea:int,posicion_previa:
        
         # cuadrados--de--instrucciones
     pygame.draw.rect(pantalla,NARANJITA,(135,340, 30, 30))
-    texto_narnja = fuente_2.render('Casilleros especiales',True, NEGRO)
+    texto_narnja = fuente_4.render('Casilleros especiales',True, NEGRO)
     pantalla.blit(texto_narnja,(170,350))
 
     pygame.draw.rect(pantalla,VERDE,(320,340, 30, 30))
-    texto_verde = fuente_2.render('Posicion actual',True, NEGRO)
+    texto_verde = fuente_4.render('Posicion actual',True, NEGRO)
     pantalla.blit(texto_verde,(355,350))
 
     pygame.draw.rect(pantalla,ROJO,(480,340, 30, 30))
-    texto_rojo = fuente_2.render('Posicion anterior',True, NEGRO)
+    texto_rojo = fuente_4.render('Posicion anterior',True, NEGRO)
     pantalla.blit(texto_rojo,(515,350))
 
     pygame.draw.rect(pantalla,AZUL,(135,380, 30, 30))
-    texto_azul = fuente_2.render('Posicion en la que el jugador cae pero tien un valor especial que lo desplaza',True, NEGRO)
+    texto_azul = fuente_4.render('Posicion en la que el jugador cae pero tien un valor especial que lo desplaza',True, NEGRO)
     pantalla.blit(texto_azul,(170,390))
 
 def realizar_movimientos(correcta: bool,posicion_actual: int)-> int:
@@ -427,7 +453,6 @@ def pantalla_fin (estado:int,posicion_actual:int,nombre_jugador:str):
     """
 
     clock = pygame.time.Clock()
-    mouse_pos = pygame.mouse.get_pos()
     boton_volver = pygame.Rect(300, 540, 300, 60)
     bandera_sonido = False
     while True:
@@ -491,7 +516,7 @@ def mostrar_boton_terminar (mouse_pos: tuple):
     else:
         color_boton = NEGRO
     pygame.draw.rect(pantalla, color_boton, boton_terminar)
-    texto_boton = fuente_2.render("TERMINAR JUEGO", True, BLANCO)
+    texto_boton = fuente_4.render("TERMINAR JUEGO", True, BLANCO)
     pantalla.blit(texto_boton, (boton_terminar.x + 15, boton_terminar.y + 15))
 
 def mostrar_crono(tiempo_restante:int):
@@ -508,7 +533,7 @@ def mostrar_crono(tiempo_restante:int):
     else:
         color_crono = BLANCO
     pygame.draw.rect(pantalla,NEGRO,(120,30,240,40))
-    texto_cronometro = fuente_3.render(f"Tiempo restante: {tiempo_restante}s", True, color_crono)
+    texto_cronometro = fuente_2.render(f"Tiempo restante: {tiempo_restante}s", True, color_crono)
     pantalla.blit(texto_cronometro, (130, 40))
 
 while True:
